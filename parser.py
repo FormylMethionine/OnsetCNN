@@ -1,3 +1,6 @@
+from time import perf_counter
+
+
 def metadata(path):
     keys = ["#TITLE",
             "#SUBTITLE",
@@ -69,6 +72,10 @@ def parse(path):
 if __name__ == "__main__":
     path = "Songs/Vocaloid Project Pad Pack/Anti the Holic/Anti the Holic.sm"
     #path = "Anti the Holic.sm"
+    t_start = perf_counter()
     dic = parse(path)["#NOTES"]
+    t_end = perf_counter()
+    t = t_end - t_start
     print(dic)
     print(len(dic))
+    print("elapsed time:", t)
