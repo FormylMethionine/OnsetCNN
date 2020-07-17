@@ -33,36 +33,30 @@ def metadata(path):
 
 def maps(path):
     ret = []
-    i = -1
-    with open(path, "r") as f:
-        for line in f:
-            if "#NOTES" in line:
-                i += 1
-                ret.append([])
-            if i >= 0:
-                ret[i].append(line[:len(line)-1])
-    for chart in ret:
-        print(clean(chart))
-        chart = clean(chart)
-
-    return ret
-
-
-def clean(chart):
-    ret = chart.copy()
-    to_remove = ["#NOTES:", '', ';']
-    for i in to_remove:
-        ret.remove(i)
-        for i in ret:
-            if i[0:2] == "//":
-                ret.remove(i)
-        #to_add = []
-        #for i in ret:
-            #to_add.append(i)
-            #ret.remove(i)
-            #if i == ',' or ret.index(i) == 4:
-                #ret.append(to_add[:len(to_add)-1])
-                #to_add = []
+    f = open(path, "r")
+    line = f.readline()
+    chart = []
+    while line != "":
+        while line != "#NOTES:\n":
+            line = f.readline()
+        for i in range(1, 7):
+            chart.append(line[:len(line)-1])
+            line = f.readline()
+        while line != "" and line != "\n" and line[0] != ';':
+            to_add = []
+            while line != "" and \
+                    line != "\n" and \
+                    line[0] != ',' and \
+                    line[0] != ';':
+                to_add.append(line[:len(line)-1])
+                line = f.readline()
+            chart.append(to_add)
+            to_add = []
+            line = f.readline()
+        ret.append(chart)
+        chart = []
+        line = f.readline()
+    f.close()
     return ret
 
 
@@ -74,4 +68,7 @@ def parse(path):
 
 if __name__ == "__main__":
     path = "Songs/Vocaloid Project Pad Pack/Anti the Holic/Anti the Holic.sm"
-    print(parse(path))
+    #path = "Anti the Holic.sm"
+    dic = parse(path)["#NOTES"]
+    print(dic)
+    print(len(dic))
