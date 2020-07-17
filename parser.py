@@ -2,7 +2,7 @@ from time import perf_counter
 
 
 def metadata(path):
-    keys = ["#TITLE",
+    keys = {"#TITLE",
             "#SUBTITLE",
             "#ARTIST",
             "#TITLETRANSLIT",
@@ -22,15 +22,14 @@ def metadata(path):
             "#BPMS",
             "#STOPS",
             "#BGCHANGES",
-            "#KEYSOUNDS"]
+            "#KEYSOUNDS"}
     ret = {}
-    for key in keys:
-        ret[key] = ""
-        with open(path, "r") as f:
-            for line in f:
-                line = line.split(":")
-                if line[0] in ret:
-                    ret[line[0]] = line[1][:len(line[1])-2].strip()
+    with open(path, "r") as f:
+        for line in f:
+            line = line.split(":")
+            if line[0] in keys:
+                ret[line[0]] = line[1][:len(line[1])-2].strip()
+    print(ret)
     return ret
 
 
@@ -73,9 +72,8 @@ if __name__ == "__main__":
     path = "Songs/Vocaloid Project Pad Pack/Anti the Holic/Anti the Holic.sm"
     #path = "Anti the Holic.sm"
     t_start = perf_counter()
-    dic = parse(path)["#NOTES"]
+    dic = parse(path)
     t_end = perf_counter()
     t = t_end - t_start
     print(dic)
-    print(len(dic))
     print("elapsed time:", t)
