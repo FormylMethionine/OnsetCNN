@@ -1,7 +1,7 @@
 from time import perf_counter
 
 
-def metadata(path):
+def metadata_sm(path):
     keys = {"#TITLE",
             "#SUBTITLE",
             "#ARTIST",
@@ -33,7 +33,52 @@ def metadata(path):
     return ret
 
 
-def maps(path):
+def metadata_ssc(path):
+    keys = {"#VERSION",
+            "#TITLE",
+            "#SUBTITLE",
+            "#ARTIST",
+            "#TITLETRANSLIT",
+            "#SUBTITLETRANSLIT",
+            "#ARTISTTRANSLIT",
+            "#GENRE",
+            "#ORIGIN",
+            "#CREDIT",
+            "#BANNER",
+            "#BACKGROUND",
+            "#PREVIEWVID",
+            "#CDTITLE",
+            "#MUSIC",
+            "#OFFSET",
+            "#SAMPLESTART",
+            "#SAMPLELENGTH",
+            "#SELECTABLE",
+            "#SONGTYPE",
+            "#SONGCATEGORY",
+            "#VOLUME",
+            "#DISPLAYBPM",
+            "#BPMS",
+            "#TIMESIGNATURES",
+            "#TICKCOUNTS",
+            "#COMBOS",
+            "#SPEEDS",
+            "#SCROLLS",
+            "#LABELS",
+            "#LASTSECONDHINT",
+            "#BGCHANGES"}
+    ret = {}
+    with open(path, "r") as f:
+        for line in f:
+            line = line.split(":")
+            if line[0] == "#NOTEDATA":
+                break
+            if line[0] in keys:
+                ret[line[0]] = line[1][:len(line[1])-2].strip()
+    print(ret)
+    return ret
+
+
+def maps_sm(path):
     ret = []
     f = open(path, "r")
     line = f.readline()
@@ -41,8 +86,12 @@ def maps(path):
     while line != "":
         while line != "#NOTES:\n":
             line = f.readline()
-        for i in range(1, 7):
-            chart.append(line[:len(line)-1])
+        line = f.readline()
+        while line[len(line)-2] == ':':
+            line = line.replace(' ', '')
+            line = line.replace(':', '')
+            if line != "\n":
+                chart.append(line[:len(line)-1])
             line = f.readline()
         while line != "" and line != "\n" and line[0] != ';':
             to_add = []
@@ -63,13 +112,14 @@ def maps(path):
 
 
 def parse(path):
-    ret = metadata(path)
-    ret["#NOTES"] = maps(path)
+    ret = metadata_sm(path)
+    ret["#NOTES"] = maps_sm(path)
     return ret
 
 
 if __name__ == "__main__":
-    path = "Songs/Vocaloid Project Pad Pack/Anti the Holic/Anti the Holic.sm"
+    #path = "Songs/Vocaloid Project Pad Pack/Anti the Holic/Anti the Holic.sm"
+    path = "Songs/Vocaloid Project Pad Pack/Imagination Forest/Imagination Forest.sm"
     #path = "Anti the Holic.sm"
     t_start = perf_counter()
     dic = parse(path)
