@@ -29,7 +29,6 @@ def metadata_sm(path):
             line = line.split(":")
             if line[0] in keys:
                 ret[line[0]] = line[1][:len(line[1])-2].strip()
-    print(ret)
     return ret
 
 
@@ -99,6 +98,7 @@ def maps_sm(path):
                     line != "\n" and \
                     line[0] != ',' and \
                     line[0] != ';':
+                line = line.replace('M', '0')
                 to_add.append(line[:len(line)-1])
                 line = f.readline()
             chart.append(to_add)
