@@ -43,23 +43,23 @@ def somme(note):
 def onsets(song):
     time = float(song["#OFFSET"])
     beat = 0
-    bpm = song["#BPMS"][beat]
     ret = []
-    for measure in song["#NOTES"]:
+    for mes in song["#NOTES"]:
         i = 0
         while i < 4:
-            for note in measure[int(0.25*i*len(measure)):int(0.25*(i+1)*len(measure))]:
+            bpm = song["#BPMS"][beat]
+            for note in mes[int(0.25*i*len(mes)):int(0.25*(i+1)*len(mes))]:
                 if somme(note) != 0:
                     ret.append(time)
-                time += 4/(bpm*len(measure)) * 60 * 1000
+                time += 4/(bpm*len(mes))*60*1000
             beat += 1
-            bpm = song["#BPMS"][beat%356]
             i += 1
     return ret
 
 
 if __name__ == "__main__":
-    path = "dataset_ddr/stepcharts/Imagination Forest.sm"
+    #path = "dataset_ddr/stepcharts/Imagination Forest.sm"
+    path = "dataset_ddr/stepcharts/Anti the Holic.sm"
     test = filter(parse(path))
     print(test)
     bpm = test["#BPMS"]
