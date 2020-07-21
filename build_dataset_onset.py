@@ -4,17 +4,24 @@ from parser import parse
 
 
 def filter(song):
+    print("filtering...")
     ret = {}
     ret["#MUSIC"] = song["#MUSIC"]
     ret["#OFFSET"] = song["#OFFSET"]
     charts = song["#NOTES"]
     charts.sort(key=lambda x: x[3], reverse=True)
-    ret["#NOTES"] = charts[0][4:]
+    i = 0
+    while True:
+        if type(charts[0][i]) == list:
+            break
+        i += 1
+    ret["#NOTES"] = charts[0][i:]
     ret["#BPMS"] = parse_bpm(song["#BPMS"], ret["#NOTES"])
     return ret
 
 
 def parse_bpm(bpm, song):
+    print("parsing bpms...")
     bpm = bpm.split(',')
     for i in bpm:
         bpm[bpm.index(i)] = i.split('=')
@@ -41,6 +48,7 @@ def somme(note):
 
 
 def onsets(song):
+    print("converting to timestamps...")
     time = float(song["#OFFSET"])
     beat = 0
     ret = []
@@ -59,7 +67,8 @@ def onsets(song):
 
 if __name__ == "__main__":
     #path = "dataset_ddr/stepcharts/Imagination Forest.sm"
-    path = "dataset_ddr/stepcharts/Anti the Holic.sm"
+    #path = "dataset_ddr/stepcharts/Anti the Holic.sm"
+    path = "dataset_ddr/stepcharts/Through the Fire and Flames.sm"
     test = filter(parse(path))
     print(test)
     bpm = test["#BPMS"]

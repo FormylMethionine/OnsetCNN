@@ -92,6 +92,8 @@ def maps_sm(path):
             if line != "\n":
                 chart.append(line[:len(line)-1])
             line = f.readline()
+        while line == "\n":
+            line = f.readline()
         while line != "" and line != "\n" and line[0] != ';':
             to_add = []
             while line != "" and \
@@ -112,6 +114,7 @@ def maps_sm(path):
 
 
 def parse(path):
+    print("parsing...")
     ret = metadata_sm(path)
     ret["#NOTES"] = maps_sm(path)
     return ret
