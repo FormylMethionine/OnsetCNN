@@ -9,7 +9,7 @@ def filter(song):
     ret["#MUSIC"] = song["#MUSIC"]
     ret["#OFFSET"] = song["#OFFSET"]
     charts = song["#NOTES"]
-    charts.sort(key=lambda x: x[3], reverse=True)
+    charts.sort(key=lambda x: int(x[3]), reverse=True)
     i = 0
     while True:
         if type(charts[0][i]) == list:
@@ -34,7 +34,6 @@ def parse_bpm(bpm, song):
                 j += 1
         else:
             while j < len(song)*4:
-                print(j)
                 ret.append(float(bpm[i][1]))
                 j += 1
     return ret
@@ -51,29 +50,36 @@ def onsets(song):
     print("converting to timestamps...")
     time = float(song["#OFFSET"])
     beat = 0
-    ret = []
+    ret = {}
+    ret["#MUSIC"] = song["#MUSIC"]
+    ons = []
     for mes in song["#NOTES"]:
         i = 0
         while i < 4:
             bpm = song["#BPMS"][beat]
             for note in mes[int(0.25*i*len(mes)):int(0.25*(i+1)*len(mes))]:
                 if somme(note) != 0:
-                    ret.append(time)
+                    ons.append(time)
                 time += 4/(bpm*len(mes))*60*1000
             beat += 1
             i += 1
+    ret["#ONSETS"] = ons
     return ret
 
 
+def build_dataset():
+    dataset = []
+    for f in os.listdir("./dataset_ddr/stepcharts"):
+        print("Converting '" + f + "'")
+        f = "./dataset_ddr/stepcharts/" + f
+        song = parse(f)
+        song = filter(song)
+        song = onsets(song)
+        dataset.append(song)
+        print("\n")
+    with open("dataset_onset_ddr.json", "w") as f:
+        f.write(json.dumps(dataset))
+
+
 if __name__ == "__main__":
-    #path = "dataset_ddr/stepcharts/Imagination Forest.sm"
-    #path = "dataset_ddr/stepcharts/Anti the Holic.sm"
-    path = "dataset_ddr/stepcharts/Through the Fire and Flames.sm"
-    test = filter(parse(path))
-    print(test)
-    bpm = test["#BPMS"]
-    print(bpm)
-    print(bpm[16])
-    print(len(bpm), len(test["#NOTES"])*4)
-    print(onsets(test))
-    print(len(onsets(test)))
+    build_dataset()

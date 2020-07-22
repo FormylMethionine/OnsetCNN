@@ -86,11 +86,13 @@ def maps_sm(path):
         while line != "#NOTES:\n":
             line = f.readline()
         line = f.readline()
-        while line[len(line)-2] == ':':
+        #while line[len(line)-2] == ':':
+        while ':' in line:
             line = line.replace(' ', '')
-            line = line.replace(':', '')
+            #line = line.replace(':', '')
             if line != "\n":
-                chart.append(line[:len(line)-1])
+                #chart.append(line[:len(line)-1])
+                chart.append(line[:line.find(':')])
             line = f.readline()
         while line == "\n":
             line = f.readline()
@@ -101,7 +103,9 @@ def maps_sm(path):
                     line[0] != ',' and \
                     line[0] != ';':
                 line = line.replace('M', '0')
-                to_add.append(line[:len(line)-1])
+                line = line.replace(' ', '')
+                if line[0] != "/":
+                    to_add.append(line[:len(line)-1])
                 line = f.readline()
             chart.append(to_add)
             to_add = []
