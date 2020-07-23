@@ -69,6 +69,7 @@ def onsets(song):
 
 def build_dataset():
     dataset = []
+    n = 0
     for f in os.listdir("./dataset_ddr/stepcharts"):
         print("Converting '" + f + "'")
         f = "./dataset_ddr/stepcharts/" + f
@@ -76,9 +77,11 @@ def build_dataset():
         song = filter(song)
         song = onsets(song)
         dataset.append(song)
+        n += 1
         print("\n")
     with open("dataset_onset_ddr.json", "w") as f:
         f.write(json.dumps(dataset))
+    print(n, "files converted")
 
 
 if __name__ == "__main__":
