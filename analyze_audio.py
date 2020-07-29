@@ -1,26 +1,6 @@
-import matplotlib.colors as clr
-import matplotlib.pyplot as plt
 import essentia.standard
 import essentia
 import numpy as np
-import scipy.signal
-
-
-def stft(path):
-
-    windows = np.array([23, 46, 93])*1e-2
-    samplerate = 44100
-    loader = essentia.standard.MonoLoader(filename=path)
-    data = loader()
-    m = samplerate*windows
-    ret = []
-    for i in m:
-        f, t, STFT = scipy.signal.stft(data,
-                                       fs=samplerate,
-                                       nperseg=samplerate*1e-2,
-                                       nfft=i)
-        ret.append([f, t, STFT])
-    return ret
 
 
 def analyze(path):
@@ -52,16 +32,3 @@ if __name__ == "__main__":
     path = './dataset_ddr/audiofiles/Anti the Holic.ogg'
     test = analyze(path)
     print(test)
-    #data = stft(path)[1]
-    #loader = MonoLoader(filename=path)
-    #data = loader()
-    #samplerate = 44100
-    #data = data.sum(axis=1) / 2
-    #m = floor(samplerate*9.3e-2)
-    # f, t, STFT = scipy.signal.stft(data,
-    #                               fs=samplerate,
-    #                               nperseg=1e-2*samplerate,
-    #                               nfft=samplerate*9.3e-2)
-    #data[2] = np.abs(data[2])
-    #plt.pcolormesh(data[1], data[0], data[2], norm=clr.LogNorm(), shading='nearest')
-    #plt.show()
