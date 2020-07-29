@@ -1,5 +1,4 @@
 #!/bin/bash
-shopt -s nullglob
 
 OIFS="$IFS"
 IFS=$'\n'
@@ -20,6 +19,7 @@ for f in $(find -name "*.sm"); do
 	echo "Copying $f ..."
 	cp "$f" "../stepcharts"
 done
+#echo $(ls -l ../stepcharts | wc -l) "files copied"
 
 for f in $(find -name "*.ogg" -o -name "*.mp3" -o -name "*.wav"); do
 	echo "Copying $f ..."
