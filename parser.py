@@ -73,7 +73,7 @@ def metadata_ssc(path):
                 break
             if line[0] in keys:
                 ret[line[0]] = line[1][:len(line[1])-2].strip()
-    print(ret)
+    #print(ret)
     return ret
 
 
@@ -118,10 +118,11 @@ def maps_sm(path):
 
 
 def parse(path):
-    print("parsing...")
-    ret = metadata_sm(path)
-    ret["#NOTES"] = maps_sm(path)
-    return ret
+    #print("parsing...")
+    metadata = metadata_sm(path)
+    #ret["#NOTES"] = maps_sm(path)
+    charts = maps_sm(path)
+    return metadata, charts
 
 
 if __name__ == "__main__":

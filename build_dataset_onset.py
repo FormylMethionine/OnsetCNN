@@ -1,27 +1,29 @@
 import os
 import json
+import pickle as pkl
+from analyze_audio import analyze
 from parser import parse
 
 
-def filter(song):
-    print("filtering...")
-    ret = {}
-    ret["#MUSIC"] = song["#MUSIC"]
-    ret["#OFFSET"] = song["#OFFSET"]
-    charts = song["#NOTES"]
+def filter(metadata, charts):
+    #print("filtering...")
+    ret = []
+    #ret["#MUSIC"] = song["#MUSIC"]
+    #ret["#OFFSET"] = song["#OFFSET"]
+    #charts = song["#NOTES"]
     charts.sort(key=lambda x: int(x[3]), reverse=True)
     i = 0
     while True:
         if type(charts[0][i]) == list:
             break
         i += 1
-    ret["#NOTES"] = charts[0][i:]
-    ret["#BPMS"] = parse_bpm(song["#BPMS"], ret["#NOTES"])
-    return ret
+    ret = charts[0][i:]
+    bpm = parse_bpm(ret, metadata["#BPMS"])
+    return ret, bpm
 
 
-def parse_bpm(bpm, song):
-    print("parsing bpms...")
+def parse_bpm(chart, bpm):
+    #print("parsing bpms...")
     bpm = bpm.split(',')
     for i in bpm:
         bpm[bpm.index(i)] = i.split('=')
@@ -33,7 +35,7 @@ def parse_bpm(bpm, song):
                 ret.append(float(bpm[i][1]))
                 j += 1
         else:
-            while j < len(song)*4:
+            while j < len(chart)*4:
                 ret.append(float(bpm[i][1]))
                 j += 1
     return ret
@@ -46,41 +48,43 @@ def somme(note):
     return ret
 
 
-def onsets(song):
-    print("converting to timestamps...")
-    time = float(song["#OFFSET"])
+def onsets(metadata, chart, bpm):
+    #print("converting to timestamps...")
+    time = float(metadata["#OFFSET"])
     beat = 0
-    ret = {}
-    ret["#MUSIC"] = song["#MUSIC"]
+    ret = []
+    audiodata = analyze("./dataset_ddr/audiofiles/"+metadata["#MUSIC"])
     ons = []
-    for mes in song["#NOTES"]:
+    for mes in chart:
         i = 0
         while i < 4:
-            bpm = song["#BPMS"][beat]
+            bpmtmp = abs(bpm[beat])
             for note in mes[int(0.25*i*len(mes)):int(0.25*(i+1)*len(mes))]:
                 if somme(note) != 0:
                     ons.append(time)
-                time += 4/(bpm*len(mes))*60*1000
+                time += 4/(bpmtmp*len(mes))*60*1000
             beat += 1
             i += 1
-    ret["#ONSETS"] = ons
-    return ret
+    ret = ons
+    return ret, audiodata
 
 
 def build_dataset():
-    dataset = []
     n = 0
     for f in os.listdir("./dataset_ddr/stepcharts"):
         print("Converting '" + f + "'")
-        f = "./dataset_ddr/stepcharts/" + f
-        song = parse(f)
-        song = filter(song)
-        song = onsets(song)
-        dataset.append(song)
+        path = "./dataset_ddr/stepcharts/" + f
+        metadata, chart = parse(path)
+        chart, bpm = filter(metadata, chart)
+        chart, audio = onsets(metadata, chart, bpm)
+        with open(f+'.json', 'w') as fi:
+            fi.write(json.dumps(chart))
+        with open(f+'.metadata', 'w') as fi:
+            fi.write(json.dumps(metadata))
+        with open(f+'.pkl', 'wb') as fi:
+            fi.write(pkl.dumps(audio))
         n += 1
-        print("\n")
-    with open("dataset_onset_ddr.json", "w") as f:
-        f.write(json.dumps(dataset))
+        #print("\n")
     print(n, "files converted")
 
 
