@@ -77,11 +77,11 @@ def build_dataset():
         metadata, chart = parse(path)
         chart, bpm = filter(metadata, chart)
         chart, audio = onsets(metadata, chart, bpm)
-        with open(f+'.json', 'w') as fi:
+        with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
             fi.write(json.dumps(chart))
-        with open(f+'.metadata', 'w') as fi:
+        with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
             fi.write(json.dumps(metadata))
-        with open(f+'.pkl', 'wb') as fi:
+        with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
             fi.write(pkl.dumps(audio))
         n += 1
         #print("\n")
