@@ -2,7 +2,7 @@ import os
 import json
 import pickle as pkl
 import multiprocessing as mp
-from analyze_audio import analyzers, analyze
+from analyze_audio import create_analyzers, analyze
 from parser import parse
 
 
@@ -71,7 +71,13 @@ def onsets(metadata, chart, bpm):
 
 def build_dataset():
     pool = mp.Pool(mp.cpu_count() - 1)
-    pool.map(convert, os.listdir("./dataset_ddr/stepcharts/"))
+    pool.map_async(convert, os.listdir("./dataset_ddr/stepcharts/"))
+    pool.close()
+    pool.join()
+    pool = mp.Pool(mp.cpu_count() - 1)
+    pool.map_async(audio, os.listdir("./dataset_ddr/audiofiles/"))
+    pool.close()
+    pool.join()
 
 
 def convert(f):
@@ -86,16 +92,13 @@ def convert(f):
         fi.write(json.dumps(metadata))
 
 
-def audio():
-    analyzer = analyzers()
-    for f in os.listdir("./dataset_ddr/audiofiles/"):
-        print("Converting '" + f + "'")
-        path = "./dataset_ddr/audiofiles/" + f
-        audiodata = analyze(path, analyzer)
-        with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
-            fi.write(pkl.dumps(audiodata))
+def audio(f):
+    print("Converting '" + f + "'")
+    path = "./dataset_ddr/audiofiles/" + f
+    audiodata = analyze(path)
+    with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
+        fi.write(pkl.dumps(audiodata))
 
 
 if __name__ == "__main__":
     build_dataset()
-    audio()

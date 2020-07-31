@@ -3,7 +3,7 @@ import essentia
 import numpy as np
 
 
-def analyzers():
+def create_analyzers():
     nffts = [1024, 2048, 4096]
     samplerate = 44100
     analyzers = []
@@ -19,12 +19,13 @@ def analyzers():
     return analyzers
 
 
-def analyze(path, analyzers):
+def analyze(path):
     nffts = [1024, 2048, 4096]
     samplerate = 44100
     loader = essentia.standard.MonoLoader(filename=path, sampleRate=samplerate)
     audiodata = loader()
     ret = []
+    analyzers = create_analyzers()
     for nfft, (win, spec, mel) in zip(nffts, analyzers):
         feats = []
         for frame in essentia.standard.FrameGenerator(audiodata, nfft, 512):
