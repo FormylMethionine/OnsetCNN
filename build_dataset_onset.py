@@ -1,7 +1,8 @@
 import os
 import json
 import pickle as pkl
-from analyze_audio import analyze
+import multiprocessing as mp
+from analyze_audio import analyzers, analyze
 from parser import parse
 
 
@@ -53,7 +54,6 @@ def onsets(metadata, chart, bpm):
     time = float(metadata["#OFFSET"])
     beat = 0
     ret = []
-    audiodata = analyze("./dataset_ddr/audiofiles/"+metadata["#MUSIC"])
     ons = []
     for mes in chart:
         i = 0
@@ -66,27 +66,36 @@ def onsets(metadata, chart, bpm):
             beat += 1
             i += 1
     ret = ons
-    return ret, audiodata
+    return ret
 
 
 def build_dataset():
-    n = 0
-    for f in os.listdir("./dataset_ddr/stepcharts"):
+    pool = mp.Pool(mp.cpu_count() - 1)
+    pool.map(convert, os.listdir("./dataset_ddr/stepcharts/"))
+
+
+def convert(f):
+    print("Converting '" + f + "'")
+    path = "./dataset_ddr/stepcharts/" + f
+    metadata, chart = parse(path)
+    chart, bpm = filter(metadata, chart)
+    chart = onsets(metadata, chart, bpm)
+    with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
+        fi.write(json.dumps(chart))
+    with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
+        fi.write(json.dumps(metadata))
+
+
+def audio():
+    analyzer = analyzers()
+    for f in os.listdir("./dataset_ddr/audiofiles/"):
         print("Converting '" + f + "'")
-        path = "./dataset_ddr/stepcharts/" + f
-        metadata, chart = parse(path)
-        chart, bpm = filter(metadata, chart)
-        chart, audio = onsets(metadata, chart, bpm)
-        with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
-            fi.write(json.dumps(chart))
-        with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
-            fi.write(json.dumps(metadata))
+        path = "./dataset_ddr/audiofiles/" + f
+        audiodata = analyze(path, analyzer)
         with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
-            fi.write(pkl.dumps(audio))
-        n += 1
-        #print("\n")
-    print(n, "files converted")
+            fi.write(pkl.dumps(audiodata))
 
 
 if __name__ == "__main__":
     build_dataset()
+    audio()
