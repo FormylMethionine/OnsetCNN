@@ -53,7 +53,6 @@ def onsets(metadata, chart, bpm):
     #print("converting to timestamps...")
     time = float(metadata["#OFFSET"])
     beat = 0
-    ret = []
     ons = []
     for mes in chart:
         i = 0
@@ -61,12 +60,11 @@ def onsets(metadata, chart, bpm):
             bpmtmp = abs(bpm[beat])
             for note in mes[int(0.25*i*len(mes)):int(0.25*(i+1)*len(mes))]:
                 if somme(note) != 0:
-                    ons.append(time)
+                    ons.append(int(round(time)))
                 time += 4/(bpmtmp*len(mes))*60*1000
             beat += 1
             i += 1
-    ret = ons
-    return ret
+    return ons
 
 
 def build_dataset():
