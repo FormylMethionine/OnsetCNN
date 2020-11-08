@@ -1,7 +1,10 @@
 import os
 import json
+import numpy as np
+import pickle as pkl
 import multiprocessing as mp
 from time import perf_counter
+from analyze_audio import analyze
 
 
 def metadata_sm(path):
@@ -181,17 +184,30 @@ def onsets(metadata, chart, bpm):
     return ons
 
 
+def vectorize(ons, audio):
+    ret = np.zeros(len(audio))
+    ons2 = [i/ons[-1] for i in ons]
+    for i in ons2:
+        ret[int(i*(len(audio) - 1))] = 1
+    return ret
+
+
 def parse(f):
     print("Converting '" + f + "'")
     path = "./dataset_ddr/stepcharts/" + f
     metadata = metadata_sm(path)
+    path_audio = "./dataset_ddr/audiofiles/" + metadata["#MUSIC"]
     chart = maps_sm(path)
     chart, bpm = filter(metadata, chart)
     chart = onsets(metadata, chart, bpm)
+    audio = analyze(path_audio)
+    chart = vectorize(chart, audio)
     with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
-        fi.write(json.dumps(chart))
+        fi.write(json.dumps(chart.tolist()))
     with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
         fi.write(json.dumps(metadata))
+    with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
+        fi.write(pkl.dumps(audio))
 
 
 if __name__ == "__main__":
