@@ -1,6 +1,5 @@
 import os
 import json
-import pickle as pkl
 import multiprocessing as mp
 from time import perf_counter
 
@@ -182,10 +181,11 @@ def onsets(metadata, chart, bpm):
     return ons
 
 
-def parse(path):
+def parse(f):
     print("Converting '" + f + "'")
     path = "./dataset_ddr/stepcharts/" + f
-    metadata, chart = parse(path)
+    metadata = metadata_sm(path)
+    chart = maps_sm(path)
     chart, bpm = filter(metadata, chart)
     chart = onsets(metadata, chart, bpm)
     with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
@@ -194,8 +194,8 @@ def parse(path):
         fi.write(json.dumps(metadata))
 
 
-
 if __name__ == "__main__":
     pool = mp.Pool(mp.cpu_count() - 1)
     pool.map_async(parse, os.listdir("./dataset_ddr/stepcharts/"))
     pool.close()
+    pool.join()
