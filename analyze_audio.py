@@ -1,6 +1,9 @@
 import essentia.standard
 import essentia
 import numpy as np
+import pickle as pkl
+import os
+import multiprocessing as mp
 
 
 def create_analyzers():
@@ -15,7 +18,7 @@ def create_analyzers():
                                          lowFrequencyBound=27.5,
                                          highFrequencyBound=16000,
                                          sampleRate=samplerate)
-        analyzers.append((win, spec, mel))
+        analyzers.append((nfft, win, spec, mel))
     return analyzers
 
 
@@ -26,7 +29,7 @@ def analyze(path):
     audiodata = loader()
     ret = []
     analyzers = create_analyzers()
-    for nfft, (win, spec, mel) in zip(nffts, analyzers):
+    for nfft, win, spec, mel in analyzers:
         feats = []
         for frame in essentia.standard.FrameGenerator(audiodata, nfft, 512):
             frame_feats = mel(spec(win(frame)))
@@ -37,7 +40,16 @@ def analyze(path):
     return ret
 
 
+def analyze_audio(f):
+    print("Converting '" + f + "'")
+    path = "./dataset_ddr/audiofiles/" + f
+    audiodata = analyze(path)
+    with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
+        fi.write(pkl.dumps(audiodata))
+
+
 if __name__ == "__main__":
-    path = './dataset_ddr/audiofiles/Anti the Holic.ogg'
-    test = analyze(path)
-    print(test)
+    pool = mp.Pool(mp.cpu_count() - 1)
+    pool.map_async(analyze_audio, os.listdir("./dataset_ddr/audiofiles/"))
+    pool.close()
+    pool.join()
