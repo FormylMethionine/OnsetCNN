@@ -79,7 +79,6 @@ def metadata_ssc(path):
                 break
             if line[0] in keys:
                 ret[line[0]] = line[1][:len(line[1])-2].strip()
-    #print(ret)
     return ret
 
 
@@ -124,38 +123,36 @@ def maps_sm(path):
 
 
 def filter(metadata, charts):
-    #print("filtering...")
-    ret = []
-    #ret["#MUSIC"] = song["#MUSIC"]
-    #ret["#OFFSET"] = song["#OFFSET"]
-    #charts = song["#NOTES"]
+    ret = {}
     charts.sort(key=lambda x: int(x[3]), reverse=True)
-    i = 0
-    while True:
-        if type(charts[0][i]) == list:
-            break
-        i += 1
-    ret = charts[0][i:]
+    for chart in charts:
+        i = 0
+        while True:
+            if type(charts[0][i]) == list:
+                break
+            i += 1
+        ret[int(chart[3])] = chart[i:]
     bpm = parse_bpm(ret, metadata["#BPMS"])
     return ret, bpm
 
 
-def parse_bpm(chart, bpm):
-    #print("parsing bpms...")
+def parse_bpm(charts, bpm):
     bpm = bpm.split(',')
     for i in bpm:
         bpm[bpm.index(i)] = i.split('=')
-    ret = []
-    j = 0
-    for i in range(0, len(bpm)):
-        if i < len(bpm)-1:
-            while j < int(bpm[i+1][0].split('.')[0]):
-                ret.append(float(bpm[i][1]))
-                j += 1
-        else:
-            while j < len(chart)*4:
-                ret.append(float(bpm[i][1]))
-                j += 1
+    ret = {}
+    for diff in charts:
+        ret[diff] = []
+        j = 0
+        for i in range(0, len(bpm)):
+            if i < len(bpm)-1:
+                while j < int(bpm[i+1][0].split('.')[0]):
+                    ret[diff].append(float(bpm[i][1]))
+                    j += 1
+            else:
+                while j < len(charts[diff])*4:
+                    ret[diff].append(float(bpm[i][1]))
+                    j += 1
     return ret
 
 
@@ -166,29 +163,32 @@ def somme(note):
     return ret
 
 
-def onsets(metadata, chart, bpm):
-    #print("converting to timestamps...")
+def onsets(metadata, charts, bpm):
     time = float(metadata["#OFFSET"])
-    beat = 0
-    ons = []
-    for mes in chart:
-        i = 0
-        while i < 4:
-            bpmtmp = abs(bpm[beat])
-            for note in mes[int(0.25*i*len(mes)):int(0.25*(i+1)*len(mes))]:
-                if somme(note) != 0:
-                    ons.append(int(round(time)))
-                time += 4/(bpmtmp*len(mes))*60*1000
-            beat += 1
-            i += 1
+    ons = {}
+    for diff in charts:
+        beat = 0
+        ons[diff] = []
+        for mes in charts[diff]:
+            i = 0
+            while i < 4:
+                bpmtmp = abs(bpm[diff][beat])
+                for note in mes[int(0.25*i*len(mes)):int(0.25*(i+1)*len(mes))]:
+                    if somme(note) != 0:
+                        ons[diff].append(int(round(time)))
+                    time += 4/(bpmtmp*len(mes))*60*1000
+                beat += 1
+                i += 1
     return ons
 
 
 def vectorize(ons, audio):
-    ret = np.zeros(len(audio))
-    ons2 = [i/ons[-1] for i in ons]
-    for i in ons2:
-        ret[int(i*(len(audio) - 1))] = 1
+    ret = {}
+    for diff in ons:
+        ret[diff] = np.zeros(len(audio))
+        pos_percent = [i/ons[diff][-1] for i in ons[diff]]
+        for i in pos_percent:
+            ret[diff][int(i*(len(audio) - 1))] = 1
     return ret
 
 
@@ -202,8 +202,10 @@ def parse(f):
     chart = onsets(metadata, chart, bpm)
     audio = analyze(path_audio)
     chart = vectorize(chart, audio)
+    for diff in chart:
+        chart[diff] = chart[diff].tolist()
     with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
-        fi.write(json.dumps(chart.tolist()))
+        fi.write(json.dumps(chart))
     with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
         fi.write(json.dumps(metadata))
     with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
@@ -215,3 +217,5 @@ if __name__ == "__main__":
     pool.map_async(parse, os.listdir("./dataset_ddr/stepcharts/"))
     pool.close()
     pool.join()
+    #for f in os.listdir("./dataset_ddr/stepcharts"):
+        #parse(f)
