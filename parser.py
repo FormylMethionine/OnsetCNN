@@ -193,7 +193,14 @@ def vectorize(ons, audio, time):
         pos_percent = [i/(time*1000) for i in ons[diff] if i >= 0]
         for i in pos_percent:
             ret[diff][int(i*(len(audio) - 1))] = 1
-    return ret
+    prob_ret = np.zeros(len(audio))
+    for frame in range(len(audio)):
+        prob = 0
+        for diff in ret:
+            prob += ret[diff][frame]
+        prob /= len(list(ret.keys()))
+        prob_ret[frame] = prob
+    return prob_ret
 
 
 def parse(f):
@@ -209,10 +216,8 @@ def parse(f):
     chart = onsets(metadata, chart, bpm, time)
     audio = analyze(path_audio)
     chart = vectorize(chart, audio, time)
-    for diff in chart:
-        chart[diff] = chart[diff].tolist()
     with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
-        fi.write(json.dumps(chart))
+        fi.write(json.dumps(chart.tolist()))
     with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
         fi.write(json.dumps(metadata))
     with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
@@ -225,4 +230,4 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     #for f in os.listdir("./dataset_ddr/stepcharts"):
-    #parse(f)
+    #    parse(f)
