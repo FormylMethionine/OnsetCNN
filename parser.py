@@ -3,6 +3,7 @@ import json
 import numpy as np
 import pickle as pkl
 import multiprocessing as mp
+from tinytag import TinyTag
 from time import perf_counter
 from analyze_audio import analyze
 
@@ -163,10 +164,10 @@ def somme(note):
     return ret
 
 
-def onsets(metadata, charts, bpm):
-    time = float(metadata["#OFFSET"])
+def onsets(metadata, charts, bpm, dur):
     ons = {}
     for diff in charts:
+        time = -1 * float(metadata["#OFFSET"]) * 1000
         beat = 0
         ons[diff] = []
         for mes in charts[diff]:
@@ -175,18 +176,21 @@ def onsets(metadata, charts, bpm):
                 bpmtmp = abs(bpm[diff][beat])
                 for note in mes[int(0.25*i*len(mes)):int(0.25*(i+1)*len(mes))]:
                     if somme(note) != 0:
-                        ons[diff].append(int(round(time)))
+                        if time > (dur*1000):
+                            ons[diff].append(dur*1000)
+                        else:
+                            ons[diff].append(time)
                     time += 4/(bpmtmp*len(mes))*60*1000
                 beat += 1
                 i += 1
     return ons
 
 
-def vectorize(ons, audio):
+def vectorize(ons, audio, time):
     ret = {}
     for diff in ons:
         ret[diff] = np.zeros(len(audio))
-        pos_percent = [i/ons[diff][-1] for i in ons[diff]]
+        pos_percent = [i/(time*1000) for i in ons[diff] if i >= 0]
         for i in pos_percent:
             ret[diff][int(i*(len(audio) - 1))] = 1
     return ret
@@ -196,12 +200,15 @@ def parse(f):
     print("Converting '" + f + "'")
     path = "./dataset_ddr/stepcharts/" + f
     metadata = metadata_sm(path)
+    music = metadata["#MUSIC"]
+    tags = TinyTag.get(f"./dataset_ddr/audiofiles/{music}")
+    time = tags.duration
     path_audio = "./dataset_ddr/audiofiles/" + metadata["#MUSIC"]
     chart = maps_sm(path)
     chart, bpm = filter(metadata, chart)
-    chart = onsets(metadata, chart, bpm)
+    chart = onsets(metadata, chart, bpm, time)
     audio = analyze(path_audio)
-    chart = vectorize(chart, audio)
+    chart = vectorize(chart, audio, time)
     for diff in chart:
         chart[diff] = chart[diff].tolist()
     with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
@@ -218,4 +225,4 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     #for f in os.listdir("./dataset_ddr/stepcharts"):
-        #parse(f)
+    #parse(f)
