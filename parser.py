@@ -187,6 +187,7 @@ def onsets(metadata, charts, bpm, dur):
 
 
 def vectorize(ons, audio, time):
+    # Onsets as a dictionnary of vectors of same size as audio
     ret = {}
     for diff in ons:
         ret[diff] = np.zeros(len(audio))
@@ -194,12 +195,20 @@ def vectorize(ons, audio, time):
         for i in pos_percent:
             ret[diff][int(i*(len(audio) - 1))] = 1
     prob_ret = np.zeros(len(audio))
+    # Onsets as probability vector
     for frame in range(len(audio)):
         prob = 0
         for diff in ret:
             prob += ret[diff][frame]
         prob /= len(list(ret.keys()))
         prob_ret[frame] = prob
+    # Cleaning head of zeros to reduce sparcity
+    k = 0
+    while True:
+        if k+8 > len(prob_ret) or prob_ret[k+8] != 0:
+            break
+        k += 1
+    prob_ret = prob_ret[k:]
     return prob_ret
 
 
@@ -230,4 +239,4 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     #for f in os.listdir("./dataset_ddr/stepcharts"):
-    #    parse(f)
+        #parse(f)
