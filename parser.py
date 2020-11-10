@@ -209,7 +209,8 @@ def vectorize(ons, audio, time):
             break
         k += 1
     prob_ret = prob_ret[k:]
-    return prob_ret
+    audio = audio[k:, :, :]
+    return prob_ret, audio
 
 
 def parse(f):
@@ -224,7 +225,7 @@ def parse(f):
     chart, bpm = filter(metadata, chart)
     chart = onsets(metadata, chart, bpm, time)
     audio = analyze(path_audio)
-    chart = vectorize(chart, audio, time)
+    chart, audio = vectorize(chart, audio, time)
     with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
         fi.write(json.dumps(chart.tolist()))
     with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
@@ -239,4 +240,4 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     #for f in os.listdir("./dataset_ddr/stepcharts"):
-        #parse(f)
+    #    parse(f)
