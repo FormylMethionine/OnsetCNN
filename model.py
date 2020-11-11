@@ -57,13 +57,14 @@ class OnsetModel(tf.Module):
         index = [line[:-1] for line in open(f"{train_dir}/index.txt")]
         total = len(index)
         for epoch in range(epochs):
-            print(f"epoch: {epoch}")
             for i in range(len(index)):
                 name = index[i]
-                print(f"\ttraining on: {name}\t({i}/{total})")
                 x = pkl.load(open(f"{train_dir}/{name}.pkl", "rb"))
                 y = json.load(open(f"{train_dir}/{name}.chart"))
-                self.train(x, y, lr)
+                for diff in y:
+                    loss = self.train(x[diff], y[diff], lr)
+                print(f"epoch: {epoch+1}\ttraining on: {name}\t({i+1}/{total})")
+
 
 def non_prob(labels):
     ret = np.zeros((len(labels)))
@@ -82,12 +83,12 @@ if __name__ == "__main__":
     model = OnsetModel()
     #print(model(inputs))
     #model.fit(audio, chart, 10, .1)
-    model.fit_dir("./dataset_ddr", 3, 1)
+    model.fit_dir("./dataset_ddr", 2, 1)
     #for i in loss:
         #print(i)
     pred = model(audio)
     #print(pred)
     #pred = [i.numpy().tolist().index(max(i)) for i in pred]
     plt.plot(range(len(audio) - 15), pred)
-    plt.plot(range(len(audio) - 15), chart[8:-7], alpha=.2)
+    plt.plot(range(len(audio) - 15), non_prob(chart[8:-7]), alpha=.2)
     plt.show()

@@ -132,7 +132,7 @@ def filter(metadata, charts):
             if type(charts[0][i]) == list:
                 break
             i += 1
-        ret[int(chart[3])] = chart[i:]
+        ret[chart[3]] = chart[i:]
     bpm = parse_bpm(ret, metadata["#BPMS"])
     return ret, bpm
 
@@ -189,28 +189,30 @@ def onsets(metadata, charts, bpm, dur):
 def vectorize(ons, audio, time):
     # Onsets as a dictionnary of vectors of same size as audio
     ret = {}
+    audio_ret = {}
     for diff in ons:
         ret[diff] = np.zeros(len(audio))
         pos_percent = [i/(time*1000) for i in ons[diff] if i >= 0]
         for i in pos_percent:
             ret[diff][int(i*(len(audio) - 1))] = 1
-    prob_ret = np.zeros(len(audio))
+    #prob_ret = np.zeros(len(audio))
     # Onsets as probability vector
-    for frame in range(len(audio)):
-        prob = 0
-        for diff in ret:
-            prob += ret[diff][frame]
-        prob /= len(list(ret.keys()))
-        prob_ret[frame] = prob
+    #for frame in range(len(audio)):
+        #prob = 0
+        #for diff in ret:
+            #prob += ret[diff][frame]
+        #prob /= len(list(ret.keys()))
+        #prob_ret[frame] = prob
     # Cleaning head of zeros to reduce sparcity
-    k = 0
-    while True:
-        if k+8 > len(prob_ret) or prob_ret[k+8] != 0:
-            break
-        k += 1
-    prob_ret = prob_ret[k:]
-    audio = audio[k:, :, :]
-    return prob_ret, audio
+    for diff in ret:
+        k = 0
+        while True:
+            if k+8 > len(ret[diff]) or ret[diff][k+8] != 0:
+                break
+            k += 1
+        ret[diff] = ret[diff][k:].tolist()
+        audio_ret[diff] = audio[k:, :, :]
+    return ret, audio_ret
 
 
 def parse(f):
@@ -227,7 +229,7 @@ def parse(f):
     audio = analyze(path_audio)
     chart, audio = vectorize(chart, audio, time)
     with open('dataset_ddr/'+f.split('.')[0]+'.chart', 'w') as fi:
-        fi.write(json.dumps(chart.tolist()))
+        fi.write(json.dumps(chart))
     with open('dataset_ddr/'+f.split('.')[0]+'.metadata', 'w') as fi:
         fi.write(json.dumps(metadata))
     with open('dataset_ddr/'+f.split('.')[0]+'.pkl', 'wb') as fi:
@@ -240,4 +242,4 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     #for f in os.listdir("./dataset_ddr/stepcharts"):
-    #    parse(f)
+        #parse(f)
