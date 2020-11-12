@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import os
 import json
 import pickle as pkl
@@ -23,6 +24,10 @@ class OnsetModel(tf.Module):
                        layers.Dense(128, activation='relu'),
                        layers.Dense(1, activation='sigmoid')]
 
+    def compile(self, loss, opt):
+        self.loss = loss
+        self.opt = opt
+
     def convert(self, song):
         ret = []
         for i in range(8, len(song) - 7):
@@ -37,16 +42,11 @@ class OnsetModel(tf.Module):
         return inputs
 
     def train(self, x, y, lr):
-        y = non_prob(y)
         y = tf.constant(y[8:-7])
-        loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
-        #loss = tf.keras.losses.MeanAbsoluteError()
-        opt = tf.keras.optimizers.Adam()
         with tf.GradientTape() as t:
-            current_loss = loss(y, model(x))
+            current_loss = self.loss(y, model(x))
         grad = t.gradient(current_loss, self.trainable_variables)
-        opt.apply_gradients(zip(grad, self.trainable_variables))
-        return current_loss
+        return grad, current_loss
 
     def fit_song(self, x, y, epochs, lr=1):
         for epoch in range(epochs):
@@ -56,22 +56,24 @@ class OnsetModel(tf.Module):
     def fit_dir(self, train_dir, epochs, lr=1):
         index = [line[:-1] for line in open(f"{train_dir}/index.txt")]
         total = len(index)
+        k = 0
         for epoch in range(epochs):
             for i in range(len(index)):
                 name = index[i]
                 x = pkl.load(open(f"{train_dir}/{name}.pkl", "rb"))
                 y = json.load(open(f"{train_dir}/{name}.chart"))
-                for diff in y:
-                    loss = self.train(x[diff], y[diff], lr)
+                for diff in x:
+                    current_grad, current_loss = self.train(x[diff], y[diff], lr)
+                    if k == 0:
+                        grad = current_grad
+                    else:
+                        grad = (tf.math.add(var1, var2) for var1, var2 in zip(grad,
+                                                                              current_grad))
+                    k += 1
                 print(f"epoch: {epoch+1}\ttraining on: {name}\t({i+1}/{total})")
+            grad = (tf.cast(dvar/k, dvar.dtype) for dvar in grad)
+            self.opt.apply_gradients(zip(grad, self.trainable_variables))
 
-
-def non_prob(labels):
-    ret = np.zeros((len(labels)))
-    for i, label in enumerate(labels):
-        if label != 0:
-            ret[i] = 1
-    return ret
 
 if __name__ == "__main__":
 
@@ -81,14 +83,19 @@ if __name__ == "__main__":
     metadata = json.load(open(f"./dataset_ddr/{name}.metadata", "r"))
 
     model = OnsetModel()
-    #print(model(inputs))
-    #model.fit(audio, chart, 10, .1)
-    model.fit_dir("./dataset_ddr", 2, 1)
-    #for i in loss:
-        #print(i)
-    pred = model(audio)
-    #print(pred)
-    #pred = [i.numpy().tolist().index(max(i)) for i in pred]
-    plt.plot(range(len(audio) - 15), pred)
-    plt.plot(range(len(audio) - 15), non_prob(chart[8:-7]), alpha=.2)
+    loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+    opt = tf.keras.optimizers.Adam()
+    model.compile(loss, opt)
+
+    t0 = time.perf_counter()
+    model.fit_dir("./dataset_ddr", 5, 1)
+    t1 = time.perf_counter()
+    print(f"time elapsed: {t1-t0}")
+
+    pred = model(audio[list(audio.keys())[0]])
+    pkl.dump(model.trainable_variables,
+             open("weights.sav", "wb"))
+    plt.plot(range(len(audio[list(audio.keys())[0]]) - 15), pred)
+    plt.plot(range(len(audio[list(audio.keys())[0]]) - 15),
+             non_prob(chart[list(chart.keys())[0]][8:-7]), alpha=.2)
     plt.show()
